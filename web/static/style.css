@@ -1,0 +1,11 @@
+/* web/static/style.css (updated) */
+body { font-family: Arial, Helvetica, sans-serif; margin: 20px; }
+.container { max-width: 900px; margin: 0 auto; }
+pre { background: #f3f3f3; padding: 10px; border-radius: 6px; white-space: pre-wrap; }
+mark { background: #ffcc66; padding: 0; }
+.error { color: red; margin-top: 10px; }
+
+/* space between inputs */
+label { font-weight: 600; }
+textarea, input { margin-top: 6px; margin-bottom: 12px; }
+

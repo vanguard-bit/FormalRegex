@@ -1,0 +1,55 @@
+<!-- web/templates/index.html (updated) -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Educational RE Tester</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Educational RE → Python Regex Tester</h1>
+
+    <form method="post" action="/run">
+      <label for="pattern">Educational RE (use + for union):</label><br>
+      <input id="pattern" name="pattern" value="{{ pattern|default('') }}" style="width:100%" /><br><br>
+
+      <label for="constraints">Variable constraints (optional) — one per line.<br>
+      Examples: <code>n &gt;= 1</code>  or <code>1 &lt; n &lt;= 10</code>  or <code>n: 1 &lt; n &lt;= 10</code></label><br>
+      <textarea id="constraints" name="constraints" rows="3" style="width:100%">{{ constraints|default('') }}</textarea><br><br>
+
+      <label for="text">Test text:</label><br>
+      <textarea id="text" name="text" rows="8" style="width:100%">{{ text|default('') }}</textarea><br><br>
+
+      <button type="submit">Run</button>
+    </form>
+
+    {% if error %}
+      <div class="error">Error: {{ error }}</div>
+    {% endif %}
+
+    {% if translated %}
+      <h3>Translated Python regex</h3>
+      <pre>{{ translated }}</pre>
+
+      <h3>Matches / Highlights</h3>
+      <div class="matches">{{ highlighted|safe }}</div>
+    {% endif %}
+    {% if accepted %}
+      <h3>Full String Acceptance</h3>
+      <table border="1" cellpadding="6" style="border-collapse: collapse;">
+        <tr><th>String</th><th>Status</th></tr>
+        {% for line, ok in accepted %}
+          <tr>
+            <td>{{ line }}</td>
+            <td style="color: {{ 'green' if ok else 'red' }};">
+              {{ "ACCEPTED" if ok else "REJECTED" }}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+    
+  </div>
+</body>
+</html>
