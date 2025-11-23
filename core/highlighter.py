@@ -1,5 +1,7 @@
 # core/highlighter.py
-import re, html
+import re
+import html
+
 
 def highlight_text(pattern, text):
     """
@@ -26,13 +28,14 @@ def highlight_text(pattern, text):
     parts.append(html.escape(text[last:]))
     return "<pre>" + "".join(parts) + "</pre>"
 
+
 def check_full_match_per_line(pattern, text):
     """
     Returns a list of (line, accepted: bool).
     Uses ^...$ anchoring to test full-string acceptance.
     """
     try:
-        prog = re.compile("^" + pattern + "$")   # force full match
+        prog = re.compile("^" + pattern + "$")  # force full match
     except re.error as e:
         return [("ERROR: " + str(e), False)]
 
@@ -43,4 +46,3 @@ def check_full_match_per_line(pattern, text):
         results.append((line_stripped, accepted))
 
     return results
-

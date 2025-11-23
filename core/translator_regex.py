@@ -2,6 +2,7 @@
 import re
 from .ast_nodes import Symbol, Concat, Union, Repeat, Group
 
+
 def ast_to_regex(node):
     """
     Convert AST (from core/parser.py) into a Python-style regex string.
@@ -56,4 +57,3 @@ def ast_to_regex(node):
         return inner
 
     raise ValueError("Unhandled AST node type: " + str(type(node)))
-

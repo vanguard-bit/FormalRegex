@@ -1,55 +1,197 @@
-<!-- web/templates/index.html (updated) -->
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Educational RE Tester</title>
-  <link rel="stylesheet" href="/static/style.css">
+    <meta charset="utf-8">
+    <title>FormalRegex – Educational RE Tester</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-  <div class="container">
-    <h1>Educational RE → Python Regex Tester</h1>
+<body class="{{ 'dark' if request.cookies.get('theme')=='dark' else '' }}">
 
-    <form method="post" action="/run">
-      <label for="pattern">Educational RE (use + for union):</label><br>
-      <input id="pattern" name="pattern" value="{{ pattern|default('') }}" style="width:100%" /><br><br>
+<div class="topbar">
+    <h1>FormalRegex</h1>
+    <div class="top-controls">
+        <button id="copyRegexBtn" class="icon-btn" title="Copy translated regex">📋</button>
+        <button id="themeToggle" class="theme-btn" title="Toggle dark mode">🌙</button>
+    </div>
+</div>
 
-      <label for="constraints">Variable constraints (optional) — one per line.<br>
-      Examples: <code>n &gt;= 1</code>  or <code>1 &lt; n &lt;= 10</code>  or <code>n: 1 &lt; n &lt;= 10</code></label><br>
-      <textarea id="constraints" name="constraints" rows="3" style="width:100%">{{ constraints|default('') }}</textarea><br><br>
+<div class="container">
 
-      <label for="text">Test text:</label><br>
-      <textarea id="text" name="text" rows="8" style="width:100%">{{ text|default('') }}</textarea><br><br>
+    <!-- LEFT PANE: INPUTS -->
+    <div class="left-panel">
 
-      <button type="submit">Run</button>
-    </form>
+        <h2>Input</h2>
 
-    {% if error %}
-      <div class="error">Error: {{ error }}</div>
-    {% endif %}
+        <label for="pattern">Educational Regular Expression</label>
+        <input type="text" id="pattern" name="pattern"
+               value="{{ pattern|default('') }}"
+               placeholder="Example: (a + b)*abb" autocomplete="off" />
 
-    {% if translated %}
-      <h3>Translated Python regex</h3>
-      <pre>{{ translated }}</pre>
+        <label for="constraints">Constraints (optional)</label>
+        <textarea id="constraints" name="constraints"
+                  placeholder="n >= 1&#10;1 <= m <= 10">{{ constraints|default('') }}</textarea>
 
-      <h3>Matches / Highlights</h3>
-      <div class="matches">{{ highlighted|safe }}</div>
-    {% endif %}
-    {% if accepted %}
-      <h3>Full String Acceptance</h3>
-      <table border="1" cellpadding="6" style="border-collapse: collapse;">
-        <tr><th>String</th><th>Status</th></tr>
-        {% for line, ok in accepted %}
-          <tr>
-            <td>{{ line }}</td>
-            <td style="color: {{ 'green' if ok else 'red' }};">
-              {{ "ACCEPTED" if ok else "REJECTED" }}
-            </td>
-          </tr>
-        {% endfor %}
-      </table>
-    {% endif %}
-    
-  </div>
+        <label for="text">Test Text</label>
+
+        <div class="overlay-wrap">
+            <!-- Highlight overlay (rendered HTML with <mark>) -->
+            <div id="overlay" class="overlay"><pre id="overlayPre" class="overlay-pre">Enter text here — matches will be highlighted in this view</pre></div>
+
+            <!-- Actual textarea sits on top and is editable -->
+            <textarea id="text" name="text" class="input-textarea"
+                      placeholder="Enter text samples, one per line">{{ text|default('') }}</textarea>
+        </div>
+
+        <div class="button-row">
+            <!-- <button id="runBtn" class="run-btn">Run</button> -->
+            <button id="clearBtn" class="run-btn secondary">Clear</button>
+        </div>
+
+        <div class="error-box" id="errorBox" style="display: none;"></div>
+
+        <!-- <h3>How the System Works</h3> -->
+        <!-- <p class="explanation"> -->
+        <!--     The tool parses TOC-style regular expressions via a grammar, builds an AST, -->
+        <!--     and translates the AST to an executable Python regex. Matches are shown below. -->
+        <!-- </p> -->
+
+    </div>
+
+    <!-- RIGHT PANE: OUTPUT -->
+    <div class="right-panel">
+        <h2>Output</h2>
+
+        <h3>Translated Python Regex</h3>
+        <pre class="code-box regex-highlight" id="regexBox">{{ translated if translated else '' }}</pre>
+
+        <!-- <h3>Matches (summary)</h3> -->
+        <!-- <div class="matches-box" id="matchesBox">{% if highlighted %}{{ highlighted|safe }}{% else %}<span class="placeholder-text">No matches yet</span>{% endif %}</div> -->
+
+        <h3>Full String Acceptance</h3>
+        <table class="accept-table" id="acceptTable">
+            <thead>
+                <tr><th>String</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            {% if accepted %}
+                {% for line, ok in accepted %}
+                <tr><td>{{ line }}</td><td class="{{ 'ok' if ok else 'bad' }}">{{ "ACCEPTED" if ok else "REJECTED" }}</td></tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+<div class="about-section">
+    <h2>About This Project</h2>
+
+    <p>
+        This tool implements a complete pipeline that takes <strong>educational, TOC-style regular
+        expressions</strong> and converts them into executable <strong>Python regex</strong>. It allows students 
+        to write the expressions they learn in Theory of Computation and immediately test them on real 
+        text — bridging the gap between <em>formal languages</em> and <em>practical regex engines</em>.
+    </p>
+
+    <h3>Grammar</h3>
+    <p>
+        The system is built on a formally defined grammar that supports union (<code>+</code>),
+        concatenation, grouping, Kleene operators (<code>* + ?</code>), repetition ranges
+        (<code>{m}</code>, <code>{m,n}</code>, <code>{m,}</code>), and exponent notation (<code>^n</code>).
+        This grammar mirrors how regular expressions are taught in classical automata theory.
+    </p>
+
+    <pre class="code-box small">
+Expr     → Term ('+' Term)*
+Term     → Factor*
+Factor   → Base ( '*' | '+' | '^n' )*
+Base     → SYMBOL | '(' Expr ')'
+    </pre>
+
+    <h3>Parser</h3>
+    <p>
+        A <strong>recursive-descent parser</strong> processes the expression according to the grammar.
+        It builds structure one layer at a time: handling grouping, repetition operators, alternation,
+        and concatenation. The output of parsing is a structured internal representation called an
+        <strong>AST (Abstract Syntax Tree)</strong>.
+    </p>
+
+    <h3>Abstract Syntax Tree (AST)</h3>
+    <p>
+        The AST breaks the expression into meaningful components:
+    </p>
+
+    <ul>
+        <li><strong>Symbol</strong> – literal characters</li>
+        <li><strong>Concat</strong> – sequences of expressions</li>
+        <li><strong>Union</strong> – alternation (<code>+</code>)</li>
+        <li><strong>Group</strong> – parenthesized expressions</li>
+        <li><strong>Repeat</strong> – quantified patterns</li>
+    </ul>
+
+    <p>
+        Each AST node is later mapped to Python regex in a step-by-step traversal.
+    </p>
+
+    <h3>Constraint Engine</h3>
+    <p>
+        Educational expressions may contain symbolic exponents like <code>a^n</code> or <code>(a+b)^m</code>.
+        The constraint engine interprets inequality statements such as:
+    </p>
+
+    <pre class="code-box small">
+n >= 1
+1 <= m <= 10
+    </pre>
+
+    <p>
+        These constraints are turned into concrete numeric ranges (e.g., <code>{3}</code>,
+        <code>{2,}</code>, <code>{1,5}</code>) used during translation.
+    </p>
+
+    <h3>Regex Translator</h3>
+    <p>
+        The translator converts the AST into valid, executable Python regex. It ensures:
+    </p>
+
+    <ul>
+        <li>Correct grouping using <code>(?: ... )</code></li>
+        <li>Union becomes alternation or character classes</li>
+        <li>All literals are safely escaped</li>
+        <li>Kleene and repetition operators are emitted correctly</li>
+        <li>Symbolic repetition uses constraint-resolved numeric bounds</li>
+    </ul>
+
+    <p>
+        For example, the expression <code>(a + b)*abb</code> becomes:
+    </p>
+
+    <pre class="code-box small">(?:[ab])*abb</pre>
+
+    <h3>Frontend and Matching</h3>
+    <p>
+        The UI highlights matches directly on top of the user’s text input using an overlay, and 
+        tests full-string acceptance using the pattern <code>^regex$</code>. This lets users see:
+    </p>
+
+    <ul>
+        <li>Where the regex matches (highlighted overlay)</li>
+        <li>How many matches appear</li>
+        <li>Whether each entire string is accepted or rejected</li>
+    </ul>
+
+    <p>
+        The interface updates interactively, allowing users to experiment and learn by observing 
+        the behavior of both theoretical and practical regular expressions.
+    </p>
+</div>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
+

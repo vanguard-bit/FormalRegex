@@ -1,9 +1,10 @@
 # core/parser.py
 from .ast_nodes import Symbol, Concat, Union, Repeat, Group
 
+
 class Parser:
     """
-    Recursive-descent parser for the educational RE grammar:
+    Recursive-descent parser for the formal RE grammar:
       Expr     := Term ('+' Term)*
       Term     := Factor*
       Factor   := Base ( '*' | '+' | '?' | '{m}', '{m,n}', '{m,}' )*
@@ -33,13 +34,13 @@ class Parser:
     def parse(self):
         node = self.parse_expr()
         if self.peek() is not None:
-            raise ValueError(f"Trailing characters at {self.i}: {self.text[self.i:]}")
+            raise ValueError(f"Trailing characters at {self.i}: {self.text[self.i :]}")
         return node
 
     def parse_expr(self):
         terms = [self.parse_term()]
-        while self.peek() == '+':
-            self.consume('+')
+        while self.peek() == "+":
+            self.consume("+")
             terms.append(self.parse_term())
         return terms[0] if len(terms) == 1 else Union(terms)
 
@@ -47,7 +48,7 @@ class Parser:
         parts = []
         while True:
             c = self.peek()
-            if c and c not in ')+':
+            if c and c not in ")+":
                 parts.append(self.parse_factor())
             else:
                 break
@@ -59,31 +60,25 @@ class Parser:
         # First parse the base expression
         node = self.parse_base()
 
-        # --- NEW FEATURE: exponent ^n ---------------------------------------
-        # (a + b)^5  => Repeat(node, 5, 5)
-        if self.peek() == '^':
-            self.consume('^')
+        if self.peek() == "^":
+            self.consume("^")
             num = self.parse_number()
             node = Repeat(node, num, num)
-        # --------------------------------------------------------------------
-
-        # Existing quantifiers (*, ?, +, {m}, {m,n}, {m,}) remain unchanged
         while True:
             c = self.peek()
-            if c == '*':
-                self.consume('*')
+            if c == "*":
+                self.consume("*")
                 node = Repeat(node, 0, None)
-            elif c == '?':
-                self.consume('?')
+            elif c == "?":
+                self.consume("?")
                 node = Repeat(node, 0, 1)
-            elif c == '{':
+            elif c == "{":
                 node = self.parse_braces(node)
-            elif c == '+':
-                # Distinguish union vs postfix '+'
-                nxt = self.text[self.i+1] if self.i+1 < len(self.text) else None
-                if nxt and (nxt.isalnum() or nxt == '('):
+            elif c == "+":
+                nxt = self.text[self.i + 1] if self.i + 1 < len(self.text) else None
+                if nxt and (nxt.isalnum() or nxt == "("):
                     break
-                self.consume('+')
+                self.consume("+")
                 node = Repeat(node, 1, None)
             else:
                 break
@@ -94,12 +89,12 @@ class Parser:
         c = self.peek()
         if c is None:
             raise ValueError("Unexpected end in base")
-        if c == '(':
-            self.consume('(')
+        if c == "(":
+            self.consume("(")
             inner = self.parse_expr()
-            if self.peek() != ')':
+            if self.peek() != ")":
                 raise ValueError("Expected ')'")
-            self.consume(')')
+            self.consume(")")
             return Group(inner)
         if c.isalnum() or c in "._-":
             self.consume()
@@ -108,19 +103,19 @@ class Parser:
 
     def parse_braces(self, node):
         # handles {m} or {m,n} or {m,}
-        self.consume('{')
+        self.consume("{")
         num = self.parse_number()
         minrep = num
         maxrep = num
-        if self.peek() == ',':
-            self.consume(',')
-            if self.peek() == '}':
+        if self.peek() == ",":
+            self.consume(",")
+            if self.peek() == "}":
                 maxrep = None
             else:
                 maxrep = self.parse_number()
-        if self.peek() != '}':
+        if self.peek() != "}":
             raise ValueError("Expected '}'")
-        self.consume('}')
+        self.consume("}")
         return Repeat(node, minrep, maxrep)
 
     def parse_number(self):
@@ -129,5 +124,4 @@ class Parser:
             raise ValueError("Expected number")
         while self.peek() and self.peek().isdigit():
             self.consume()
-        return int(self.text[start:self.i])
-
+        return int(self.text[start : self.i])
